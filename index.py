@@ -28,16 +28,25 @@ class Suncal:
     """Wrapper class for the Sun class. One useful method which returns a
        string representation of the ICS."""
 
-    def __init__(self, lat, lon, year, month, day, days, type="sunRiseSet"):
-        import Sun
-        f = getattr(Sun, type, "sunRiseSet")
+    def __init__(self, lat, lon, date, days, type="sunRiseSet"):
+        from Sun import Sun
+        f = getattr(Sun, type, Sun.sunRiseSet)
         self.utc = vobject.icalendar.utc
         self.v = v = vobject.iCalendar()
         self.lat = lat
         self.lon = lon
-        self.d = datetime(year, month, day)
-        v.add('x-wr-calname').value = "Sunrise and Sunset times for %fN, %fW" \
-            % (lat, lon)
+        self.d = date
+        if f is Sun.sunRiseSet:
+            name = "Sunrise and Sunset times for %fN, %fW"
+        elif f is Sun.civilTwilight:
+            name = "Civil dawn and dusk times for %fN, %fW"
+        elif f is Sun.nauticalTwilight:
+            name = "Nautical dawn and dusk times for %fN, %fW"
+        elif f is Sun.astronomicalTwilight:
+            name = "Astronomical dawn and dusk times for %fN, %fW"
+        else:
+            name = "Times for %fN, %fW" # but it will error anyway.
+        v.add('x-wr-calname').value = name % (lat, lon)
         v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.1//EN"
         v.add('description').value = "Show the sunrise and sunset times for " \
             + "a given location for one year from the current date."
@@ -112,8 +121,8 @@ function showLink() {
 </p>
 </div>
 <h1>Sunset/Sunrise iCalendar</h1>
-<p>Enter your lat/long to get an iCal file for one year, from today, of sunrise
-and sunset times. You may change the parameters to show the times for
+<p>Enter your lat/long to get an iCal file for one year, from last month, of
+sunrise and sunset times. You may change the parameters to show the times for
 civil/nautical/astonomical twilight. You should also be able to import the
 calendar dynamically into something like
 <a href="http://www.google.com/calendar">Google Calendar</a>. No account is
@@ -162,7 +171,8 @@ local timezone, especially for DST!</p>
 <p>Big code cleanup. Fix a presentation bug (&quot;E&quot; instead of
 &quot;N&quot;).</p>
 <p><b>2009-12-08</b></p>
-<p>Add twilight options. Remove promise to store locations.</p>
+<p>Add twilight options. Remove promise to store locations. Calendars start
+from one month ago.</p>
 <p style="text-align: right"><i>Bruce Duncan, &copy; 2008</i>
 <a href="http://validator.w3.org/check?uri=referer">
 <img src="http://www.w3.org/Icons/valid-xhtml10-blue"
@@ -185,14 +195,13 @@ def cal(req, lat=None, long=None, type=None):
         req.write('Found')
     if type is None:
         type = "sunRiseSet"
-    from datetime import datetime
     req.content_type = "text/calendar"
-    d = datetime.today()
+    d = datetime.datetime.today()
     req.headers_out['Content-Disposition'] = \
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
         lat, long)
     k = Suncal(float(long), float(lat), # lat/long reversed
-        d.year, d.month, d.day, 365, type)
+        d - timedelta(days=30), 365, type)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
     req.write(s)
@@ -225,7 +234,6 @@ def Suncalendar(req):
 
 
 if __name__ == "__main__":
-    from datetime import datetime
     d = datetime.today()
-    k = Suncal(-3.177664, 55.932756, d.year, d.month, d.day, 365)
+    k = Suncal(-3.177664, 55.932756, d-timedelta(days=30), 365)
     print k.ical()
