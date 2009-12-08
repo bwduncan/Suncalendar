@@ -26,6 +26,8 @@ Solar flux, equation of time and import of python library
 2007-12-12 - v1.5 by Miguel Tremblay: bug fix to solar flux calculation
 """
 
+__all__ = ['SUN_PY_VERSION', 'Sun']
+
 SUN_PY_VERSION = 1.5
 
 import math
@@ -339,16 +341,14 @@ class Sun:
 
     @staticmethod
     def rev180(x):
-        """
-        Reduce angle to within +180..+180 degrees
-        """
+        """Reduce angle to within +180..+180 degrees."""
         return (x - 360.0 * math.floor(x / 360.0 + 0.5))
 
     @classmethod
     def GMST0(cls, d):
         """
         This function computes GMST0, the Greenwich Mean Sidereal Time
-        at 0h UT (i.e. the sidereal time at the Greenwhich meridian at
+        at 0h UT (i.e. the sidereal time at the Greenwich meridian at
         0h UT).  GMST is then the sidereal time at Greenwich at any
         time of the day.  I've generalized GMST0 as well, and define it
         as:  GMST0 = GMST - UT  --  this allows GMST0 to be computed at
@@ -400,7 +400,7 @@ class Sun:
         # Compute the altitude
         altitude = 90.0 - latitude + dec
 
-        # In the tropical and  in extreme latitude, values over 90 may occurs.
+        # In the tropical and in extreme latitude, values over 90 may occurs.
         if altitude > 90:
             return 180 - altitude
 
@@ -414,7 +414,7 @@ class Sun:
         """
         Compute the maximal solar flux to reach the ground for this date and
         latitude.
-        Originaly comes from Environment Canada weather forecast model.
+        Originally comes from Environment Canada weather forecast model.
         Information was of the public domain on release by Environment Canada
         Output is in W/M^2.
         """
@@ -422,7 +422,7 @@ class Sun:
         fEot, fR0r, tDeclsc = cls.equation_of_time(year, month, day, latitude)
         fSF = (tDeclsc[0] + tDeclsc[1]) * fR0r
 
-        # In the case of a negative declinaison, solar flux is null
+        # In the case of a negative declination, solar flux is null
         if fSF < 0:
             fCoeff = 0
         else:
@@ -440,15 +440,15 @@ class Sun:
     def equation_of_time(cls, year, month, day, latitude):
         """
         Description: Subroutine computing the part of the equation of time
-                     needed in the computing of the theoritical solar flux
-                     Correction originating of the CMC GEM model.
+                     needed in the computing of the theoretical solar flux
+                     Correction originating from the CMC GEM model.
 
         Parameters:  int nTime : cTime for the correction of the time.
 
         Returns: tuple (double fEot, double fR0r, tuple tDeclsc)
                  dEot: Correction for the equation of time
                  dR0r: Corrected solar constant for the equation of time
-                 tDeclsc: Declinaison
+                 tDeclsc: Declination
         """
         # Julian date
         nJulianDate = cls.julian(year, month, day)
@@ -478,7 +478,7 @@ class Sun:
         """
         Name: __solcons
 
-        Parameters: [I] double dAlf: Solar constant to correct the excentricity
+        Parameters: [I] double dAlf: Solar constant to correct the eccentricity
 
         Returns: double dVar : Variation of the solar constant
 
