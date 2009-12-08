@@ -36,7 +36,7 @@ import calendar
 
 class Sun:
 
-    # Following are some macros around the "workhorse" function __daylen__
+    # Following are some macros around the "workhorse" function __daylen
     # They mainly fill in the desired values for the reference altitude
     # below the horizon, and also selects whether this altitude should
     # refer to the Sun's center or its upper limb.
