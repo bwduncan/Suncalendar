@@ -200,7 +200,7 @@ def cal(req, lat=None, long=None, type=None):
     d = datetime.today()
     req.headers_out['Content-Disposition'] = \
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
-        lat, long)
+        float(lat), float(long))
     k = Suncal(float(lat), float(long), d - timedelta(days=30), 365, type)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
