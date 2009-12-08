@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf8 -*-
 """
 SUNRISET.C - computes Sun rise/set times, start/end of twilight, and
              the length of the day at any date and latitude
@@ -16,7 +16,7 @@ Direct conversion to Java
 Sean Russell <ser@germane-software.com>
 
 Conversion to Python Class, 2002-03-21
-Henrik Härkönen <radix@kortis.to>
+Henrik HÃ¤rkÃ¶nen <radix@kortis.to>
 
 Solar Altitude added by Miguel Tremblay 2005-01-16
 Solar flux, equation of time and import of python library
@@ -388,7 +388,7 @@ class Sun:
         true north.
         Altitude of the northern hemisphere are given relative to
         true south.
-        Declination is between 23.5° North and 23.5° South depending
+        Declination is between 23.5Â° North and 23.5Â° South depending
         on the period of the year.
         Source of formula for altitude is PhysicalGeography.net
         http://www.physicalgeography.net/fundamentals/6h.html
