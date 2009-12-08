@@ -3,7 +3,11 @@
 # -*- coding: iso-8859-1 -*-
 
 """A mod_python script to output ICS calendar files of sunrise and sunset times
-at a given lat/long."""
+at a given lat/long.
+
+Note: The Sun.py library used seems to follow the long/lat convention, which is
+different from the more-commonly used lat/long convention. We attempt to use
+lat/long where possible."""
 
 import vobject
 from datetime import datetime, timedelta, tzinfo
@@ -24,22 +28,21 @@ class Suncal:
     """Wrapper class for the Sun class. One useful method which returns a
        string representation of the ICS."""
 
-    def __init__(self, lon, lat, year, month, day, days):
+    def __init__(self, lat, lon, year, month, day, days):
         import Sun
         self.utc = vobject.icalendar.utc
         self.v = v = vobject.iCalendar()
-        self.lon = lon
         self.lat = lat
+        self.lon = lon
         self.d = datetime(year, month, day)
-        j = Sun.Sun()
-        v.add('x-wr-calname').value = "Sunrise and Sunset times for %fW, %fN" \
-            % (lon, lat)
+        v.add('x-wr-calname').value = "Sunrise and Sunset times for %fN, %fW" \
+            % (lat, lon)
         v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.1//EN"
         v.add('description').value = "Show the sunrise and sunset times for " \
             + "a given location for one year from the current date."
         for date in range(days):
-            rise, set = j.sunRiseSet(self.d.year, self.d.month, self.d.day,
-                                     lon, lat)
+            rise, set = Sun.sunRiseSet(self.d.year, self.d.month, self.d.day,
+                                     lon, lat) # lat/long reversed.
             self.__addPoint(v, rise, 'Sunrise')
             self.__addPoint(v, set, 'Sunset')
             self.d += timedelta(1)
@@ -82,12 +85,12 @@ def index(req):
 <script type="text/javascript">
 /* <![CDATA[ */
 function showLink() {
-    document.getElementById('link').href = 'cal?long=' +
-        document.getElementById('long').value + '&lat=' +
-        document.getElementById('lat').value;
+    document.getElementById('link').href = 'cal?lat=' +
+        document.getElementById('lat').value + '&long=' +
+        document.getElementById('long').value;
     document.getElementById('link').innerHTML = 'iCalendar for ' +
-        document.getElementById('long').value + 'W, ' +
-        document.getElementById('lat').value + 'E';
+        document.getElementById('lat').value + 'N, ' +
+        document.getElementById('long').value + 'W';
     document.getElementById('linkContainer').style.display = 'block';
     return false
 }
@@ -114,10 +117,10 @@ close to my flat in Edinburgh. In future versions, I hope to be able to store
 named locations for people to choose from a list.</p>
 <form action="cal" method="get">
 <p style="margin-left: 2em">
-<label for="long">Longitutde (decimal degrees, negative is West):</label>
-<input type="text" name="long" id="long" value="-3.177664" /><br />
 <label for="lat">Latitude (decimal degrees, negative is South):</label>
 <input type="text" name="lat" id="lat" value="55.932756" />
+<label for="long">Longitutde (decimal degrees, negative is West):</label>
+<input type="text" name="long" id="long" value="-3.177664" /><br />
 <input type="submit" value="Download .ics" />
 <input type="submit" name="URL" value="Show Link"
     onclick="return showLink()" />
@@ -145,7 +148,8 @@ I used <a href="http://www.vim.org/">Vim</a>.</p>
 <p>Times are now output in UTC. This should allow clients to adjust to the
 local timezone, especially for DST!</p>
 <p><b>2009-12-08</b></p>
-<p>Big code cleanup.</p>
+<p>Big code cleanup. Fix a presentation bug (&quot;E&quot; instead of
+&quot;N&quot;).</p>
 <p style="text-align: right"><i>Bruce Duncan, &copy; 2008</i>
 <a href="http://validator.w3.org/check?uri=referer">
 <img src="http://www.w3.org/Icons/valid-xhtml10-blue"
@@ -158,10 +162,10 @@ local timezone, especially for DST!</p>
     return s
 
 
-def cal(req, long=None, lat=None):
+def cal(req, lat=None, long=None):
     """Use the Suncal class to output a calendar for one year from the current
     date."""
-    if long is None or lat is None:
+    if lat is None or long is None:
         req.status = 302
         req.content_type = 'text/plain'
         req.headers_out['Location'] = '.'
@@ -171,8 +175,9 @@ def cal(req, long=None, lat=None):
     d = datetime.today()
     req.headers_out['Content-Disposition'] = \
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
-        long, lat)
-    k = Suncal(float(long), float(lat), d.year, d.month, d.day, 365)
+        lat, long)
+    k = Suncal(float(long), float(lat), # lat/long reversed
+        d.year, d.month, d.day, 365)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
     req.write(s)
