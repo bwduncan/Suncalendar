@@ -32,34 +32,44 @@ class Suncal:
         from Sun import Sun
         f = getattr(Sun, type, Sun.sunRiseSet)
         self.utc = vobject.icalendar.utc
-        self.v = v = vobject.iCalendar()
+        self.v = vobject.iCalendar()
         self.lat = lat
         self.lon = lon
         self.d = date
         print "lat %f, long %f" % (lat, lon)
         if type == "sunRiseSet":
             name = "Sunrise and Sunset times for %fN, %fW"
+            start = "Sunrise"
+            end = "Sunset"
         elif type == "civilTwilight":
             name = "Civil dawn and dusk times for %fN, %fW"
+            start = "Civil dawn"
+            end = "Civil dusk"
         elif type == "nauticalTwilight":
             name = "Nautical dawn and dusk times for %fN, %fW"
+            start = "Nautical dawn"
+            end = "Nautical dusk"
         elif type == "astronomicalTwilight":
             name = "Astronomical dawn and dusk times for %fN, %fW"
+            start = "Astronomical dawn"
+            end = "Astronomical dusk"
         else:
             name = "Times for %fN, %fW" # but it will error anyway.
-        v.add('x-wr-calname').value = name % (lat, lon)
-        v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.1//EN"
-        v.add('description').value = "Show the sunrise and sunset times for " \
+            start = "Start"
+            end = "End"
+        self.v.add('x-wr-calname').value = name % (lat, lon)
+        self.v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.1//EN"
+        self.v.add('description').value = "Show the sunrise and sunset times for " \
             + "a given location for one year from the current date."
         for date in range(days):
             rise, set = f(self.d.year, self.d.month, self.d.day,
                           lon, lat) # lat/long reversed.
-            self.__addPoint(v, rise, 'Sunrise')
-            self.__addPoint(v, set, 'Sunset')
+            self.__addPoint(rise, start)
+            self.__addPoint(set, end)
             self.d += timedelta(1)
 
-    def __addPoint(self, v, t, summary):
-        ev = v.add('vevent')
+    def __addPoint(self, t, summary):
+        ev = self.v.add('vevent')
         ev.add('summary').value = summary
         uid = ev.add('uid')
         start = ev.add('dtstart')
