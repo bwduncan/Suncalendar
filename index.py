@@ -200,8 +200,7 @@ def cal(req, lat=None, long=None, type=None):
     req.headers_out['Content-Disposition'] = \
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
         lat, long)
-    k = Suncal(float(long), float(lat), # lat/long reversed
-        d - timedelta(days=30), 365, type)
+    k = Suncal(float(lat), float(long), d - timedelta(days=30), 365, type)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
     req.write(s)
