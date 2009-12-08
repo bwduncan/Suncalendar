@@ -24,62 +24,50 @@ Solar flux, equation of time and import of python library
 
 
 2007-12-12 - v1.5 by Miguel Tremblay: bug fix to solar flux calculation
-
-
 """
 
 SUN_PY_VERSION = 1.5
 
 import math
-from math import pi
-
 import calendar
 
 
 class Sun:
 
-    def __init__(self):
-        """"""
-
-        # Some conversion factors between radians and degrees
-        self.RADEG = 180.0 / pi
-        self.DEGRAD = pi / 180.0
-        self.INV360 = 1.0 / 360.0
-
     def daysSince2000Jan0(self, y, m, d):
         """A macro to compute the number of days elapsed since 2000 Jan 0.0
            (which is equal to 1999 Dec 31, 0h UT)"""
-        return (367 * (y) - ((7 * ((y) + (((m) + 9) / 12))) / 4) +
-               ((275 * (m)) / 9) + (d) - 730530)
+        return 367 * y - 7 * (y + (m + 9) / 12) / 4 + \
+               275 * m / 9 + d - 730530
 
     # The trigonometric functions in degrees
     def sind(self, x):
         """Returns the sin in degrees"""
-        return math.sin(x * self.DEGRAD)
+        return math.sin(math.radians(x))
 
     def cosd(self, x):
         """Returns the cos in degrees"""
-        return math.cos(x * self.DEGRAD)
+        return math.cos(math.radians(x))
 
     def tand(self, x):
         """Returns the tan in degrees"""
-        return math.tan(x * self.DEGRAD)
+        return math.tan(math.radians(x))
 
     def atand(self, x):
         """Returns the arc tan in degrees"""
-        return math.atan(x) * self.RADEG
+        return math.degrees(math.atan(x))
 
     def asind(self, x):
         """Returns the arc sin in degrees"""
-        return math.asin(x) * self.RADEG
+        return math.degrees(math.asin(x))
 
     def acosd(self, x):
         """Returns the arc cos in degrees"""
-        return math.acos(x) * self.RADEG
+        return math.degrees(math.acos(x))
 
     def atan2d(self, y, x):
         """Returns the atan2 in degrees"""
-        return math.atan2(y, x) * self.RADEG
+        return math.degrees(math.atan2(y, x))
 
     # Following are some macros around the "workhorse" function __daylen__
     # They mainly fill in the desired values for the reference altitude
@@ -189,10 +177,7 @@ class Sun:
         sidtime = self.revolution(self.GMST0(d) + 180.0 + lon)
 
         # Compute Sun's RA + Decl at this moment
-        res = self.sunRADec(d)
-        sRA = res[0]
-        sdec = res[1]
-        sr = res[2]
+        sRA, sdec, sr = self.sunRADec(d)
 
         # Compute time when Sun is at south - in hours UT
         tsouth = 12.0 - self.rev180(sidtime - sRA) / 15.0
@@ -211,16 +196,11 @@ class Sun:
                (self.cosd(lat) * self.cosd(sdec))
 
         if cost >= 1.0:
-            rc = -1
             t = 0.0           # Sun always below altit
-
         elif cost <= -1.0:
-            rc = 1
             t = 12.0         # Sun always above altit
-
         else:
             t = self.acosd(cost) / 15.0   # The diurnal arc, hours
-
 
         # Store rise and set times - in hours UT
         return (tsouth - t, tsouth + t)
@@ -244,15 +224,13 @@ class Sun:
         """
 
         # Compute d of 12h local mean solar time
-        d = self.daysSince2000Jan0(year, month, day) + 0.5 - (lon / 360.0)
+        d = self.daysSince2000Jan0(year, month, day) + 0.5 - lon / 360.0
 
         # Compute obliquity of ecliptic (inclination of Earth's axis)
         obl_ecl = 23.4393 - 3.563E-7 * d
 
         # Compute Sun's position
-        res = self.sunpos(d)
-        slon = res[0]
-        sr = res[1]
+        slon, sr = self.sunpos(d)
 
         # Compute sine and cosine of Sun's declination
         sin_sdecl = self.sind(obl_ecl) * self.sind(slon)
@@ -265,19 +243,16 @@ class Sun:
         if upper_limb:
             altit = altit - sradius
 
-
         cost = (self.sind(altit) - self.sind(lat) * sin_sdecl) / \
                (self.cosd(lat) * cos_sdecl)
         if cost >= 1.0:
-            t = 0.0             # Sun always below altit
+            return 0.0             # Sun always below altit
 
         elif cost <= -1.0:
-            t = 24.0      # Sun always above altit
+            return 24.0      # Sun always above altit
 
         else:
-            t = (2.0 / 15.0) * self.acosd(cost)     # The diurnal arc, hours
-
-        return t
+            return 2.0 / 15.0 * self.acosd(cost)     # The diurnal arc, hours
 
     def sunpos(self, d):
         """
@@ -289,18 +264,18 @@ class Sun:
 
         # Compute mean elements
         M = self.revolution(356.0470 + 0.9856002585 * d)
-        w = 282.9404 + 4.70935E-5 * d
-        e = 0.016709 - 1.151E-9 * d
+        w = 282.9404 + 4.70935e-5 * d
+        e = 0.016709 - 1.151e-9 * d
 
         # Compute true longitude and radius vector
-        E = M + e * self.RADEG * self.sind(M) * (1.0 + e * self.cosd(M))
+        E = M + math.degrees(e) * self.sind(M) * (1.0 + e * self.cosd(M))
         x = self.cosd(E) - e
         y = math.sqrt(1.0 - e * e) * self.sind(E)
-        r = math.sqrt(x * x + y * y)              #Solar distance
-        v = self.atan2d(y, x)                 # True anomaly
+        r = math.hypot(x, y)               # Solar distance
+        v = self.atan2d(y, x)              # True anomaly
         lon = v + w                        # True solar longitude
         if lon >= 360.0:
-            lon = lon - 360.0   # Make it 0..360 degrees
+            lon -= 360.0   # Make it 0..360 degrees
 
         return (lon, r)
 
@@ -312,16 +287,14 @@ class Sun:
         """
 
         # Compute Sun's ecliptical coordinates
-        res = self.sunpos(d)
-        lon = res[0]  # True solar longitude
-        r = res[1]    # Solar distance
+        lon, r = self.sunpos(d)
 
         # Compute ecliptic rectangular coordinates (z=0)
         x = r * self.cosd(lon)
         y = r * self.sind(lon)
 
         # Compute obliquity of ecliptic (inclination of Earth's axis)
-        obl_ecl = 23.4393 - 3.563E-7 * d
+        obl_ecl = 23.4393 - 3.563e-7 * d
 
         # Convert to equatorial rectangular coordinates - x is unchanged
         z = y * self.sind(obl_ecl)
@@ -329,7 +302,7 @@ class Sun:
 
         # Convert to spherical coordinates
         RA = self.atan2d(y, x)
-        dec = self.atan2d(z, math.sqrt(x * x + y * y))
+        dec = self.atan2d(z, math.hypot(x, y))
 
         return (RA, dec, r)
 
@@ -341,13 +314,13 @@ class Sun:
 
         Reduce angle to within 0..360 degrees
         """
-        return (x - 360.0 * math.floor(x * self.INV360))
+        return (x - 360.0 * math.floor(x / 360.0))
 
     def rev180(self, x):
         """
         Reduce angle to within +180..+180 degrees
         """
-        return (x - 360.0 * math.floor(x * self.INV360 + 0.5))
+        return (x - 360.0 * math.floor(x / 360.0 + 0.5))
 
     def GMST0(self, d):
         """
@@ -380,9 +353,8 @@ class Sun:
         # Any decent C compiler will add the constants at compile
         # time, imposing no runtime or code overhead.
 
-        sidtim0 = self.revolution((180.0 + 356.0470 + 282.9404) +
+        return self.revolution(180.0 + 356.0470 + 282.9404 +
                                      (0.9856002585 + 4.70935E-5) * d)
-        return sidtim0
 
     def solar_altitude(self, latitude, year, month, day):
         """
@@ -399,19 +371,17 @@ class Sun:
         """
         # Compute declination
         N = self.daysSince2000Jan0(year, month, day)
-        res = self.sunRADec(N)
-        declination = res[1]
-        sr = res[2]
+        sRA, dec, sr = self.sunRADec(N)
 
         # Compute the altitude
-        altitude = 90.0 - latitude + declination
+        altitude = 90.0 - latitude + dec
 
         # In the tropical and  in extreme latitude, values over 90 may occurs.
         if altitude > 90:
-            altitude = 90 - (altitude-90)
+            return 180 - altitude
 
         if altitude < 0:
-            altitude = 0
+            return 0
 
         return altitude
 
@@ -457,27 +427,23 @@ class Sun:
         # Julian date
         nJulianDate = self.Julian(year, month, day)
         # Check if it is a leap year
-        if(calendar.isleap(year)):
-            fDivide = 366.0
-        else:
-            fDivide = 365.0
+        fDivide = 2.0 * math.pi / (calendar.isleap(year) and 366.0 or 365.0)
         # Correction for "equation of time"
-        fA = nJulianDate / fDivide * 2 * pi
+        fA = nJulianDate * fDivide
         fR0r = self.__Solcons(fA) * 0.1367e4
-        fRdecl = 0.412 * math.cos((nJulianDate + 10.0) *
-                                  2.0 * pi / fDivide - pi)
+        fRdecl = 0.412 * math.cos((nJulianDate + 10.0) * fDivide - math.pi)
         fDeclsc1 = self.sind(latitude) * math.sin(fRdecl)
         fDeclsc2 = self.cosd(latitude) * math.cos(fRdecl)
         tDeclsc = (fDeclsc1, fDeclsc2)
         # in minutes
-        fEot = 0.002733 -7.343 * math.sin(fA) + 0.5519 * math.cos(fA) \
-               - 9.4700 * math.sin(2.0 * fA) - 3.02 * math.cos(2.0 * fA) \
-               - 0.3289 * math.sin(3.0 * fA) - 0.07581 * math.cos(3.0 * fA) \
-               - 0.1935 * math.sin(4.0 * fA) - 0.1245 * math.cos(4.0 * fA)
+        fEot = (0.002733 
+               - 7.3430 * math.sin(fA)       + 0.55190 * math.cos(fA)
+               - 9.4700 * math.sin(2.0 * fA) - 3.02000 * math.cos(2.0 * fA)
+               - 0.3289 * math.sin(3.0 * fA) - 0.07581 * math.cos(3.0 * fA)
+               - 0.1935 * math.sin(4.0 * fA) - 0.12450 * math.cos(4.0 * fA))
         # Express in fraction of hour
-        fEot = fEot / 60.0
         # Express in radians
-        fEot = fEot * 15 * pi / 180.0
+        fEot = math.radians(fEot * 15.0 / 60.0)
 
         return (fEot, fR0r, tDeclsc)
 
@@ -494,24 +460,19 @@ class Sun:
         Description:  Statement function that calculates the variation of the
           solar constant as a function of the julian day. (dAlf, in radians)
 
-        Notes: Comes from the
-
         Revision History:
         Author                Date                Reason
         Miguel Tremblay      June 30th 2004
         """
 
-        dVar = 1.0 / (1.0 -
+        return 1.0 / (1.0 -
                     9.464e-4 * math.sin(dAlf) - 0.01671 * math.cos(dAlf) -
-                    + 1.489e-4 * math.cos(2.0 * dAlf) -
+                    1.489e-4 * math.cos(2.0 * dAlf) -
                     2.917e-5 * math.sin(3.0 * dAlf) -
-                    + 3.438e-4 * math.cos(4.0 * dAlf)) ** 2
-        return dVar
+                    3.438e-4 * math.cos(4.0 * dAlf)) ** 2
 
     def Julian(self, year, month, day):
-        """
-        Return julian day.
-        """
+        """Return julian day."""
         if calendar.isleap(year): # Bissextil year, 366 days
             lMonth = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335,
                      366]
@@ -519,8 +480,7 @@ class Sun:
             lMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334,
                      365]
 
-        nJulian = lMonth[month - 1] + day
-        return nJulian
+        return lMonth[month - 1] + day
 
 
 if __name__ == "__main__":
