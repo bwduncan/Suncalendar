@@ -13,16 +13,6 @@ import vobject
 from datetime import datetime, timedelta, tzinfo
 import calendar
 
-#class UTC(tzinfo):
-#    def __init__(self):
-#        self.ZERO = timedelta(0)
-#    def utcoffset(self, dt):
-#        return self.ZERO
-#    def dst(self, dt):
-#        return self.ZERO
-#    def tzname(self, dt):
-#        return "UTC"
-
 
 class Suncal:
     """Wrapper class for the Sun class. One useful method which returns a
@@ -61,7 +51,7 @@ class Suncal:
             start = "Start"
             end = "End"
         self.v.add('x-wr-calname').value = name % (lat, lon)
-        self.v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.1//EN"
+        self.v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.2//EN"
         self.v.add('description').value = "Show the sunrise and sunset times for " \
             + "a given location for one year from the current date."
         for date in range(days):
