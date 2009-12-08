@@ -36,13 +36,14 @@ class Suncal:
         self.lat = lat
         self.lon = lon
         self.d = date
-        if f is Sun.sunRiseSet:
+        print "lat %f, long %f" % (lat, lon)
+        if type == "sunRiseSet":
             name = "Sunrise and Sunset times for %fN, %fW"
-        elif f is Sun.civilTwilight:
+        elif type == "civilTwilight":
             name = "Civil dawn and dusk times for %fN, %fW"
-        elif f is Sun.nauticalTwilight:
+        elif type == "nauticalTwilight":
             name = "Nautical dawn and dusk times for %fN, %fW"
-        elif f is Sun.astronomicalTwilight:
+        elif type == "astronomicalTwilight":
             name = "Astronomical dawn and dusk times for %fN, %fW"
         else:
             name = "Times for %fN, %fW" # but it will error anyway.
@@ -196,7 +197,7 @@ def cal(req, lat=None, long=None, type=None):
     if type is None:
         type = "sunRiseSet"
     req.content_type = "text/calendar"
-    d = datetime.datetime.today()
+    d = datetime.today()
     req.headers_out['Content-Disposition'] = \
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
         lat, long)
@@ -233,6 +234,5 @@ def Suncalendar(req):
 
 
 if __name__ == "__main__":
-    d = datetime.today()
-    k = Suncal(-3.177664, 55.932756, d-timedelta(days=30), 365)
+    k = Suncal(55.932756, -3.177664, datetime.today()-timedelta(days=30), 365)
     print k.ical()
