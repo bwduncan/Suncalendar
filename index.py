@@ -199,7 +199,7 @@ def cal(req, lat=None, long=None, type=None):
     req.content_type = "text/calendar"
     d = datetime.today()
     req.headers_out['Content-Disposition'] = \
-        'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
+        'filename="%s_%s-%s-%s_%02f_%02f.ics"' % (type, d.year, d.month, d.day,
         float(lat), float(long))
     k = Suncal(float(lat), float(long), d - timedelta(days=30), 365, type)
     s = k.ical()
@@ -234,5 +234,6 @@ def Suncalendar(req):
 
 
 if __name__ == "__main__":
-    k = Suncal(55.932756, -3.177664, datetime.today()-timedelta(days=30), 365)
+    k = Suncal(55.932756, -3.177664,
+        datetime.today() - timedelta(days=30), 365)
     print k.ical()
