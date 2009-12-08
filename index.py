@@ -28,8 +28,9 @@ class Suncal:
     """Wrapper class for the Sun class. One useful method which returns a
        string representation of the ICS."""
 
-    def __init__(self, lat, lon, year, month, day, days):
+    def __init__(self, lat, lon, year, month, day, days, type="sunRiseSet"):
         import Sun
+        f = getattr(Sun, type, "sunRiseSet")
         self.utc = vobject.icalendar.utc
         self.v = v = vobject.iCalendar()
         self.lat = lat
@@ -41,8 +42,8 @@ class Suncal:
         v.add('description').value = "Show the sunrise and sunset times for " \
             + "a given location for one year from the current date."
         for date in range(days):
-            rise, set = Sun.sunRiseSet(self.d.year, self.d.month, self.d.day,
-                                     lon, lat) # lat/long reversed.
+            rise, set = f(self.d.year, self.d.month, self.d.day,
+                          lon, lat) # lat/long reversed.
             self.__addPoint(v, rise, 'Sunrise')
             self.__addPoint(v, set, 'Sunset')
             self.d += timedelta(1)
@@ -87,8 +88,10 @@ def index(req):
 function showLink() {
     document.getElementById('link').href = 'cal?lat=' +
         document.getElementById('lat').value + '&long=' +
-        document.getElementById('long').value;
+        document.getElementById('long').value + '&type=' +
+        document.getElementById('type').value;
     document.getElementById('link').innerHTML = 'iCalendar for ' +
+        document.getElementById('type').value + ' for ' +
         document.getElementById('lat').value + 'N, ' +
         document.getElementById('long').value + 'W';
     document.getElementById('linkContainer').style.display = 'block';
@@ -110,17 +113,25 @@ function showLink() {
 </div>
 <h1>Sunset/Sunrise iCalendar</h1>
 <p>Enter your lat/long to get an iCal file for one year, from today, of sunrise
-and sunset times. You should also be able to import the calendar dynamically
-into something like <a href="http://www.google.com/calendar">Google
-Calendar</a>. No account is made of altitude. The default location is pretty
-close to my flat in Edinburgh. In future versions, I hope to be able to store
-named locations for people to choose from a list.</p>
+and sunset times. You may change the parameters to show the times for
+civil/nautical/astonomical twilight. You should also be able to import the
+calendar dynamically into something like
+<a href="http://www.google.com/calendar">Google Calendar</a>. No account is
+made of altitude. The default location is pretty close to my flat in
+Edinburgh.</p>
 <form action="cal" method="get">
 <p style="margin-left: 2em">
 <label for="lat">Latitude (decimal degrees, negative is South):</label>
-<input type="text" name="lat" id="lat" value="55.932756" />
+<input type="text" name="lat" id="lat" value="55.932756" /><br />
 <label for="long">Longitutde (decimal degrees, negative is West):</label>
 <input type="text" name="long" id="long" value="-3.177664" /><br />
+<label for="type">Type</label>
+<select name="type" id="type">
+<option value="sunRiseSet">Sunrise/sunset</option>
+<option value="civilTwilight">Civil dawn/dusk</option>
+<option value="nauticalTwilight">Nautical dawn/dusk</option>
+<option value="astronomicalTwilight">Astronomical dawn/dusk</option>
+</select><br />
 <input type="submit" value="Download .ics" />
 <input type="submit" name="URL" value="Show Link"
     onclick="return showLink()" />
@@ -150,6 +161,8 @@ local timezone, especially for DST!</p>
 <p><b>2009-12-08</b></p>
 <p>Big code cleanup. Fix a presentation bug (&quot;E&quot; instead of
 &quot;N&quot;).</p>
+<p><b>2009-12-08</b></p>
+<p>Add twilight options. Remove promise to store locations.</p>
 <p style="text-align: right"><i>Bruce Duncan, &copy; 2008</i>
 <a href="http://validator.w3.org/check?uri=referer">
 <img src="http://www.w3.org/Icons/valid-xhtml10-blue"
@@ -162,7 +175,7 @@ local timezone, especially for DST!</p>
     return s
 
 
-def cal(req, lat=None, long=None):
+def cal(req, lat=None, long=None, type=None):
     """Use the Suncal class to output a calendar for one year from the current
     date."""
     if lat is None or long is None:
@@ -170,6 +183,8 @@ def cal(req, lat=None, long=None):
         req.content_type = 'text/plain'
         req.headers_out['Location'] = '.'
         req.write('Found')
+    if type is None:
+        type = "sunRiseSet"
     from datetime import datetime
     req.content_type = "text/calendar"
     d = datetime.today()
@@ -177,7 +192,7 @@ def cal(req, lat=None, long=None):
         'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
         lat, long)
     k = Suncal(float(long), float(lat), # lat/long reversed
-        d.year, d.month, d.day, 365)
+        d.year, d.month, d.day, 365, type)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
     req.write(s)
