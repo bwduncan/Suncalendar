@@ -170,8 +170,8 @@ def cal(req, long=None, lat=None):
     req.content_type = "text/calendar"
     d = datetime.today()
     req.headers_out['Content-Disposition'] = \
-        'filename="sun_%s_%s_%s-%02d-%02d.ics"' % (long, lat,
-        d.year, d.month, d.day)
+        'filename="sun_%s_%s_%s-%02f-%02f.ics"' % (d.year, d.month, d.day,
+        long, lat)
     k = Suncal(float(long), float(lat), d.year, d.month, d.day, 365)
     s = k.ical()
     req.headers_out['Content-Length'] = str(len(s))
