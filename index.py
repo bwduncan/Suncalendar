@@ -113,8 +113,10 @@ function showLink() {
         document.getElementById('lat').value + '&long=' +
         document.getElementById('long').value + '&type=' +
         document.getElementById('type').value;
-    document.getElementById('link').innerHTML = 'iCalendar for ' +
-        document.getElementById('type').value + ' for ' +
+    document.getElementById('link').innerHTML = 'iCalendar for &quot;' +
+        document.getElementById('type').options[
+            document.getElementById('type').selectedIndex].innerHTML +
+        '&quot; for ' +
         document.getElementById('lat').value + 'N, ' +
         document.getElementById('long').value + 'W';
     document.getElementById('linkContainer').style.display = 'block';
