@@ -36,7 +36,6 @@ class Suncal:
         self.lat = lat
         self.lon = lon
         self.d = date
-        print "lat %f, long %f" % (lat, lon)
         if type == "sunRiseSet":
             name = "Sunrise and Sunset times for %fN, %fW"
             start = "Sunrise"
@@ -53,6 +52,10 @@ class Suncal:
             name = "Astronomical dawn and dusk times for %fN, %fW"
             start = "Astronomical dawn"
             end = "Astronomical dusk"
+        elif type == "aviationTime":
+            name = "First launch and last landing times for %fN, %fW"
+            start = "First launch"
+            end = "Last landing"
         else:
             name = "Times for %fN, %fW" # but it will error anyway.
             start = "Start"
@@ -148,6 +151,7 @@ Edinburgh.</p>
 <label for="type">Type</label>
 <select name="type" id="type">
 <option value="sunRiseSet">Sunrise/sunset</option>
+<option value="aviationTime">First launch/last landing</option>
 <option value="civilTwilight">Civil dawn/dusk</option>
 <option value="nauticalTwilight">Nautical dawn/dusk</option>
 <option value="astronomicalTwilight">Astronomical dawn/dusk</option>

@@ -89,6 +89,16 @@ class Sun:
         return cls.__sunriset(year, month, day, lon, lat, -35.0 / 60.0, 1)
 
     @classmethod
+    def aviationTime(cls, year, month, day, lon, lat):
+        """
+        This macro computes the start and end times as considered by UK law.
+        First launch is 30 minutes before sunrise and last landing is 30
+        minutes after sunset.
+        """
+        r, s = cls.__sunriset(year, month, day, lon, lat, -35.0 / 60.0, 1)
+        return r - 0.5, s + 0.5
+
+    @classmethod
     def civilTwilight(cls, year, month, day, lon, lat):
         """
         This macro computes the start and end times of civil twilight.
