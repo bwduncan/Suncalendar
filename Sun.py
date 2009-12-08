@@ -34,38 +34,46 @@ import calendar
 
 class Sun:
 
-    def daysSince2000Jan0(self, y, m, d):
+    @staticmethod
+    def daysSince2000Jan0(y, m, d):
         """A macro to compute the number of days elapsed since 2000 Jan 0.0
            (which is equal to 1999 Dec 31, 0h UT)"""
         return 367 * y - 7 * (y + (m + 9) / 12) / 4 + \
                275 * m / 9 + d - 730530
 
     # The trigonometric functions in degrees
-    def sind(self, x):
+    @staticmethod
+    def sind(x):
         """Returns the sin in degrees"""
         return math.sin(math.radians(x))
 
-    def cosd(self, x):
+    @staticmethod
+    def cosd(x):
         """Returns the cos in degrees"""
         return math.cos(math.radians(x))
 
-    def tand(self, x):
+    @staticmethod
+    def tand(x):
         """Returns the tan in degrees"""
         return math.tan(math.radians(x))
 
-    def atand(self, x):
+    @staticmethod
+    def atand(x):
         """Returns the arc tan in degrees"""
         return math.degrees(math.atan(x))
 
-    def asind(self, x):
+    @staticmethod
+    def asind(x):
         """Returns the arc sin in degrees"""
         return math.degrees(math.asin(x))
 
-    def acosd(self, x):
+    @staticmethod
+    def acosd(x):
         """Returns the arc cos in degrees"""
         return math.degrees(math.acos(x))
 
-    def atan2d(self, y, x):
+    @staticmethod
+    def atan2d(y, x):
         """Returns the atan2 in degrees"""
         return math.degrees(math.atan2(y, x))
 
@@ -74,74 +82,83 @@ class Sun:
     # below the horizon, and also selects whether this altitude should
     # refer to the Sun's center or its upper limb.
 
-    def dayLength(self, year, month, day, lon, lat):
+    @classmethod
+    def dayLength(cls, year, month, day, lon, lat):
         """
         This macro computes the length of the day, from sunrise to sunset.
         Sunrise/set is considered to occur when the Sun's upper limb is
         35 arc minutes below the horizon (this accounts for the refraction
         of the Earth's atmosphere).
         """
-        return self.__daylen__(year, month, day, lon, lat, -35.0 / 60.0, 1)
+        return cls.__daylen__(year, month, day, lon, lat, -35.0 / 60.0, 1)
 
-    def dayCivilTwilightLength(self, year, month, day, lon, lat):
+    @classmethod
+    def dayCivilTwilightLength(cls, year, month, day, lon, lat):
         """
         This macro computes the length of the day, including civil twilight.
         Civil twilight starts/ends when the Sun's center is 6 degrees below
         the horizon.
         """
-        return self.__daylen__(year, month, day, lon, lat, -6.0, 0)
+        return cls.__daylen__(year, month, day, lon, lat, -6.0, 0)
 
-    def dayNauticalTwilightLength(self, year, month, day, lon, lat):
+    @classmethod
+    def dayNauticalTwilightLength(cls, year, month, day, lon, lat):
         """
         This macro computes the length of the day, incl. nautical twilight.
         Nautical twilight starts/ends when the Sun's center is 12 degrees
         below the horizon.
         """
-        return self.__daylen__(year, month, day, lon, lat, -12.0, 0)
+        return cls.__daylen__(year, month, day, lon, lat, -12.0, 0)
 
-    def dayAstronomicalTwilightLength(self, year, month, day, lon, lat):
+    @classmethod
+    def dayAstronomicalTwilightLength(cls, year, month, day, lon, lat):
         """
         This macro computes the length of the day, incl. astronomical twilight.
         Astronomical twilight starts/ends when the Sun's center is 18 degrees
         below the horizon.
         """
-        return self.__daylen__(year, month, day, lon, lat, -18.0, 0)
+        return cls.__daylen__(year, month, day, lon, lat, -18.0, 0)
 
-    def sunRiseSet(self, year, month, day, lon, lat):
+    @classmethod
+    def sunRiseSet(cls, year, month, day, lon, lat):
         """
         This macro computes times for sunrise/sunset.
         Sunrise/set is considered to occur when the Sun's upper limb is
         35 arc minutes below the horizon (this accounts for the refraction
         of the Earth's atmosphere).
         """
-        return self.__sunriset__(year, month, day, lon, lat, -35.0 / 60.0, 1)
+        return cls.__sunriset__(year, month, day, lon, lat, -35.0 / 60.0, 1)
 
-    def civilTwilight(self, year, month, day, lon, lat):
+    @classmethod
+    def civilTwilight(cls, year, month, day, lon, lat):
         """
         This macro computes the start and end times of civil twilight.
         Civil twilight starts/ends when the Sun's center is 6 degrees below
         the horizon.
         """
-        return self.__sunriset__(year, month, day, lon, lat, -6.0, 0)
+        return cls.__sunriset__(year, month, day, lon, lat, -6.0, 0)
 
-    def nauticalTwilight(self, year, month, day, lon, lat):
+    @classmethod
+    def nauticalTwilight(cls, year, month, day, lon, lat):
         """
         This macro computes the start and end times of nautical twilight.
         Nautical twilight starts/ends when the Sun's center is 12 degrees
         below the horizon.
         """
-        return self.__sunriset__(year, month, day, lon, lat, -12.0, 0)
+        return cls.__sunriset__(year, month, day, lon, lat, -12.0, 0)
 
-    def astronomicalTwilight(self, year, month, day, lon, lat):
+    @classmethod
+    def astronomicalTwilight(cls, year, month, day, lon, lat):
         """
         This macro computes the start and end times of astronomical twilight.
         Astronomical twilight starts/ends when the Sun's center is 18 degrees
         below the horizon.
         """
-        return self.__sunriset__(year, month, day, lon, lat, -18.0, 0)
+        return cls.__sunriset__(year, month, day, lon, lat, -18.0, 0)
 
     # The "workhorse" function for sun rise/set times
-    def __sunriset__(self, year, month, day, lon, lat, altit, upper_limb):
+    @classmethod
+    def __sunriset__(cls, year, month, day, lon, lat, altit, upper_limb):
         """
         Note: year,month,date = calendar date, 1801-2099 only.
               Eastern longitude positive, Western longitude negative
@@ -171,16 +188,16 @@ class Sun:
                             both set to the time when the sun is at south.
         """
         # Compute d of 12h local mean solar time
-        d = self.daysSince2000Jan0(year, month, day) + 0.5 - (lon / 360.0)
+        d = cls.daysSince2000Jan0(year, month, day) + 0.5 - (lon / 360.0)
 
         # Compute local sidereal time of this moment
-        sidtime = self.revolution(self.GMST0(d) + 180.0 + lon)
+        sidtime = cls.revolution(cls.GMST0(d) + 180.0 + lon)
 
         # Compute Sun's RA + Decl at this moment
-        sRA, sdec, sr = self.sunRADec(d)
+        sRA, sdec, sr = cls.sunRADec(d)
 
         # Compute time when Sun is at south - in hours UT
-        tsouth = 12.0 - self.rev180(sidtime - sRA) / 15.0
+        tsouth = 12.0 - cls.rev180(sidtime - sRA) / 15.0
 
         # Compute the Sun's apparent radius, degrees
         sradius = 0.2666 / sr
@@ -192,20 +209,21 @@ class Sun:
         # Compute the diurnal arc that the Sun traverses to reach
         # the specified altitude altit:
 
-        cost = (self.sind(altit) - self.sind(lat) * self.sind(sdec)) / \
-               (self.cosd(lat) * self.cosd(sdec))
+        cost = (cls.sind(altit) - cls.sind(lat) * cls.sind(sdec)) / \
+               (cls.cosd(lat) * cls.cosd(sdec))
 
         if cost >= 1.0:
             t = 0.0           # Sun always below altit
         elif cost <= -1.0:
             t = 12.0         # Sun always above altit
         else:
-            t = self.acosd(cost) / 15.0   # The diurnal arc, hours
+            t = cls.acosd(cost) / 15.0   # The diurnal arc, hours
 
         # Store rise and set times - in hours UT
         return (tsouth - t, tsouth + t)
 
-    def __daylen__(self, year, month, day, lon, lat, altit, upper_limb):
+    @classmethod
+    def __daylen__(cls, year, month, day, lon, lat, altit, upper_limb):
         """
         Note: year,month,date = calendar date, 1801-2099 only.
               Eastern longitude positive, Western longitude negative
@@ -224,16 +242,16 @@ class Sun:
         """
 
         # Compute d of 12h local mean solar time
-        d = self.daysSince2000Jan0(year, month, day) + 0.5 - lon / 360.0
+        d = cls.daysSince2000Jan0(year, month, day) + 0.5 - lon / 360.0
 
         # Compute obliquity of ecliptic (inclination of Earth's axis)
         obl_ecl = 23.4393 - 3.563E-7 * d
 
         # Compute Sun's position
-        slon, sr = self.sunpos(d)
+        slon, sr = cls.sunpos(d)
 
         # Compute sine and cosine of Sun's declination
-        sin_sdecl = self.sind(obl_ecl) * self.sind(slon)
+        sin_sdecl = cls.sind(obl_ecl) * cls.sind(slon)
         cos_sdecl = math.sqrt(1.0 - sin_sdecl * sin_sdecl)
 
         # Compute the Sun's apparent radius, degrees
@@ -243,8 +261,8 @@ class Sun:
         if upper_limb:
             altit = altit - sradius
 
-        cost = (self.sind(altit) - self.sind(lat) * sin_sdecl) / \
-               (self.cosd(lat) * cos_sdecl)
+        cost = (cls.sind(altit) - cls.sind(lat) * sin_sdecl) / \
+               (cls.cosd(lat) * cos_sdecl)
         if cost >= 1.0:
             return 0.0             # Sun always below altit
 
@@ -252,9 +270,10 @@ class Sun:
             return 24.0      # Sun always above altit
 
         else:
-            return 2.0 / 15.0 * self.acosd(cost)     # The diurnal arc, hours
+            return 2.0 / 15.0 * cls.acosd(cost)     # The diurnal arc, hours
 
-    def sunpos(self, d):
+    @classmethod
+    def sunpos(cls, d):
         """
         Computes the Sun's ecliptic longitude and distance
         at an instant given in d, number of days since
@@ -263,23 +282,24 @@ class Sun:
         """
 
         # Compute mean elements
-        M = self.revolution(356.0470 + 0.9856002585 * d)
+        M = cls.revolution(356.0470 + 0.9856002585 * d)
         w = 282.9404 + 4.70935e-5 * d
         e = 0.016709 - 1.151e-9 * d
 
         # Compute true longitude and radius vector
-        E = M + math.degrees(e) * self.sind(M) * (1.0 + e * self.cosd(M))
-        x = self.cosd(E) - e
-        y = math.sqrt(1.0 - e * e) * self.sind(E)
+        E = M + math.degrees(e) * cls.sind(M) * (1.0 + e * cls.cosd(M))
+        x = cls.cosd(E) - e
+        y = math.sqrt(1.0 - e * e) * cls.sind(E)
         r = math.hypot(x, y)               # Solar distance
-        v = self.atan2d(y, x)              # True anomaly
+        v = cls.atan2d(y, x)              # True anomaly
         lon = v + w                        # True solar longitude
         if lon >= 360.0:
             lon -= 360.0   # Make it 0..360 degrees
 
         return (lon, r)
 
-    def sunRADec(self, d):
+    @classmethod
+    def sunRADec(cls, d):
         """
         Returns the angle of the Sun (RA)
         the declination (dec) and the distance of the Sun (r)
@@ -287,26 +307,27 @@ class Sun:
         """
 
         # Compute Sun's ecliptical coordinates
-        lon, r = self.sunpos(d)
+        lon, r = cls.sunpos(d)
 
         # Compute ecliptic rectangular coordinates (z=0)
-        x = r * self.cosd(lon)
-        y = r * self.sind(lon)
+        x = r * cls.cosd(lon)
+        y = r * cls.sind(lon)
 
         # Compute obliquity of ecliptic (inclination of Earth's axis)
         obl_ecl = 23.4393 - 3.563e-7 * d
 
         # Convert to equatorial rectangular coordinates - x is unchanged
-        z = y * self.sind(obl_ecl)
-        y = y * self.cosd(obl_ecl)
+        z = y * cls.sind(obl_ecl)
+        y = y * cls.cosd(obl_ecl)
 
         # Convert to spherical coordinates
-        RA = self.atan2d(y, x)
-        dec = self.atan2d(z, math.hypot(x, y))
+        RA = cls.atan2d(y, x)
+        dec = cls.atan2d(z, math.hypot(x, y))
 
         return (RA, dec, r)
 
-    def revolution(self, x):
+    @staticmethod
+    def revolution(x):
         """
         This function reduces any angle to within the first revolution
         by subtracting or adding even multiples of 360.0 until the
@@ -316,13 +337,15 @@ class Sun:
         """
         return (x - 360.0 * math.floor(x / 360.0))
 
-    def rev180(self, x):
+    @staticmethod
+    def rev180(x):
         """
         Reduce angle to within +180..+180 degrees
         """
         return (x - 360.0 * math.floor(x / 360.0 + 0.5))
 
-    def GMST0(self, d):
+    @classmethod
+    def GMST0(cls, d):
         """
         This function computes GMST0, the Greenwich Mean Sidereal Time
         at 0h UT (i.e. the sidereal time at the Greenwhich meridian at
@@ -353,10 +376,11 @@ class Sun:
         # Any decent C compiler will add the constants at compile
         # time, imposing no runtime or code overhead.
 
-        return self.revolution(180.0 + 356.0470 + 282.9404 +
+        return cls.revolution(180.0 + 356.0470 + 282.9404 +
                                      (0.9856002585 + 4.70935E-5) * d)
 
-    def solar_altitude(self, latitude, year, month, day):
+    @classmethod
+    def solar_altitude(cls, latitude, year, month, day):
         """
         Compute the altitude of the sun. No atmospherical refraction taken
         in account.
@@ -370,8 +394,8 @@ class Sun:
         http://www.physicalgeography.net/fundamentals/6h.html
         """
         # Compute declination
-        N = self.daysSince2000Jan0(year, month, day)
-        sRA, dec, sr = self.sunRADec(N)
+        N = cls.daysSince2000Jan0(year, month, day)
+        sRA, dec, sr = cls.sunRADec(N)
 
         # Compute the altitude
         altitude = 90.0 - latitude + dec
@@ -385,7 +409,8 @@ class Sun:
 
         return altitude
 
-    def get_max_solar_flux(self, latitude, year, month, day):
+    @classmethod
+    def get_max_solar_flux(cls, latitude, year, month, day):
         """
         Compute the maximal solar flux to reach the ground for this date and
         latitude.
@@ -394,7 +419,7 @@ class Sun:
         Output is in W/M^2.
         """
 
-        fEot, fR0r, tDeclsc = self.equation_of_time(year, month, day, latitude)
+        fEot, fR0r, tDeclsc = cls.equation_of_time(year, month, day, latitude)
         fSF = (tDeclsc[0] + tDeclsc[1]) * fR0r
 
         # In the case of a negative declinaison, solar flux is null
@@ -411,7 +436,8 @@ class Sun:
 
         return fSFT
 
-    def equation_of_time(self, year, month, day, latitude):
+    @classmethod
+    def equation_of_time(cls, year, month, day, latitude):
         """
         Description: Subroutine computing the part of the equation of time
                      needed in the computing of the theoritical solar flux
@@ -425,15 +451,15 @@ class Sun:
                  tDeclsc: Declinaison
         """
         # Julian date
-        nJulianDate = self.Julian(year, month, day)
+        nJulianDate = cls.julian(year, month, day)
         # Check if it is a leap year
         fDivide = 2.0 * math.pi / (calendar.isleap(year) and 366.0 or 365.0)
         # Correction for "equation of time"
         fA = nJulianDate * fDivide
-        fR0r = self.__Solcons(fA) * 0.1367e4
+        fR0r = cls.__solcons(fA) * 0.1367e4
         fRdecl = 0.412 * math.cos((nJulianDate + 10.0) * fDivide - math.pi)
-        fDeclsc1 = self.sind(latitude) * math.sin(fRdecl)
-        fDeclsc2 = self.cosd(latitude) * math.cos(fRdecl)
+        fDeclsc1 = cls.sind(latitude) * math.sin(fRdecl)
+        fDeclsc2 = cls.cosd(latitude) * math.cos(fRdecl)
         tDeclsc = (fDeclsc1, fDeclsc2)
         # in minutes
         fEot = (0.002733 
@@ -447,9 +473,10 @@ class Sun:
 
         return (fEot, fR0r, tDeclsc)
 
-    def __Solcons(self, dAlf):
+    @staticmethod
+    def __solcons(dAlf):
         """
-        Name: __Solcons
+        Name: __solcons
 
         Parameters: [I] double dAlf: Solar constant to correct the excentricity
 
@@ -471,7 +498,8 @@ class Sun:
                     2.917e-5 * math.sin(3.0 * dAlf) -
                     3.438e-4 * math.cos(4.0 * dAlf)) ** 2
 
-    def Julian(self, year, month, day):
+    @staticmethod
+    def julian(year, month, day):
         """Return julian day."""
         if calendar.isleap(year): # Bissextil year, 366 days
             lMonth = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335,
@@ -484,7 +512,6 @@ class Sun:
 
 
 if __name__ == "__main__":
-
-    k = Sun()
+#    k = Sun()
 #    print k.get_max_solar_flux(46.2, 2004, 01, 30)
-    print k.sunRiseSet(2008, 10, 31, -3.191528, 55.946124)
+    print Sun.sunRiseSet(2008, 10, 31, -3.191528, 55.946124)
