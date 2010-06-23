@@ -10,39 +10,42 @@ different from the more-commonly used lat/long convention. We attempt to use
 lat/long where possible."""
 
 import vobject
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta
 import calendar
+import gzip
+import cStringIO
+from mod_python import apache
 
 
 class Suncal:
     """Wrapper class for the Sun class. One useful method which returns a
        string representation of the ICS."""
 
-    def __init__(self, lat, lon, date, days, type="sunRiseSet"):
+    def __init__(self, lat, lon, date, days, cal="sunRiseSet"):
         from Sun import Sun
-        f = getattr(Sun, type, Sun.sunRiseSet)
+        f = getattr(Sun, cal, Sun.sunRiseSet)
         self.utc = vobject.icalendar.utc
         self.v = vobject.iCalendar()
         self.lat = lat
         self.lon = lon
         self.d = date
-        if type == "sunRiseSet":
+        if cal == "sunRiseSet":
             name = "Sunrise and Sunset times for %fN, %fW"
             start = "Sunrise"
             end = "Sunset"
-        elif type == "civilTwilight":
+        elif cal == "civilTwilight":
             name = "Civil dawn and dusk times for %fN, %fW"
             start = "Civil dawn"
             end = "Civil dusk"
-        elif type == "nauticalTwilight":
+        elif cal == "nauticalTwilight":
             name = "Nautical dawn and dusk times for %fN, %fW"
             start = "Nautical dawn"
             end = "Nautical dusk"
-        elif type == "astronomicalTwilight":
+        elif cal == "astronomicalTwilight":
             name = "Astronomical dawn and dusk times for %fN, %fW"
             start = "Astronomical dawn"
             end = "Astronomical dusk"
-        elif type == "aviationTime":
+        elif cal == "aviationTime":
             name = "First launch and last landing times for %fN, %fW"
             start = "First launch"
             end = "Last landing"
@@ -51,38 +54,47 @@ class Suncal:
             start = "Start"
             end = "End"
         self.v.add('x-wr-calname').value = name % (lat, lon)
-        self.v.add('prodid').value = "-//Bruce Duncan//Sunriseset Calendar 1.2//EN"
-        self.v.add('description').value = "Show the sunrise and sunset times for " \
-            + "a given location for one year from the current date."
+        self.v.add('prodid').value = \
+            "-//Bruce Duncan//Sunriseset Calendar 1.2//EN"
+        self.v.add('description').value = "Show the sunrise and sunset times" \
+            + " for a given location for one year from the current date."
         for date in range(days):
-            rise, set = f(self.d.year, self.d.month, self.d.day,
+            riseTime, setTime = f(self.d.year, self.d.month, self.d.day,
                           lon, lat) # lat/long reversed.
-            self.__addPoint(rise, start)
-            self.__addPoint(set, end)
+            self.__addPoint(riseTime, start)
+            self.__addPoint(setTime, end)
             self.d += timedelta(1)
 
-    def __addPoint(self, t, summary):
+    def __addPoint(self, time, summary):
         ev = self.v.add('vevent')
         ev.add('summary').value = summary
-        uid = ev.add('uid')
-        start = ev.add('dtstart')
-        stamp = ev.add('dtstamp')
-        end = ev.add('dtend')
-        geo = ev.add('geo')
-        min = 60 * (t - int(t))
-        sec = 60 * (min - int(min))
-        end.value = datetime(self.d.year, self.d.month, self.d.day,
-                int(t), int(min), int(sec), tzinfo=self.utc)
-        stamp.value = datetime.utcnow()
-        start.value = datetime(self.d.year, self.d.month, self.d.day,
-                int(t), int(min), int(sec), tzinfo=self.utc)
-        uid.value = str(calendar.timegm(start.value.timetuple())) \
+        ev.add('uid').value = str(calendar.timegm(start.value.timetuple())) \
                 + "-1@suncalendar"
-        geo.value = "%f;%f" % (self.lat, self.lon)
+        ev.add('geo').value = "%f;%f" % (self.lat, self.lon)
+        ev.add('dtstamp').value = datetime.utcnow()
+        start = ev.add('dtstart')
+        end = ev.add('dtend')
+        minute = 60 * (time - int(time))
+        second = 60 * (minute - int(minute))
+        start.value = end.value = datetime(self.d.year, self.d.month,
+                self.d.day, int(time), int(minute), int(second),
+                tzinfo=self.utc)
 
     def ical(self):
         return self.v.serialize().replace("\r\n", "\n").strip()
 
+def compressBuf(buf):
+    zbuf = cStringIO.StringIO()
+    zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)
+    zfile.write(buf)
+    zfile.close()
+    return zbuf.getvalue()
+
+def testAcceptsGzip(req):
+    if req.headers_in.has_key('accept-encoding'):
+        return (req.headers_in['accept-encoding'].find("gzip") != -1)
+    else:
+        return False
 
 def index(req):
     """Serve the static index page."""
@@ -100,15 +112,15 @@ def index(req):
 /* <![CDATA[ */
 function showLink() {
     document.getElementById('link').href = 'cal?lat=' +
-        document.getElementById('lat').value + '&long=' +
-        document.getElementById('long').value + '&type=' +
-        document.getElementById('type').value;
+        document.getElementById('lat').value + '&lon=' +
+        document.getElementById('lon').value + '&cal=' +
+        document.getElementById('cal').value;
     document.getElementById('link').innerHTML = 'iCalendar for &quot;' +
-        document.getElementById('type').options[
-            document.getElementById('type').selectedIndex].innerHTML +
+        document.getElementById('cal').options[
+            document.getElementById('cal').selectedIndex].innerHTML +
         '&quot; for ' +
         document.getElementById('lat').value + 'N, ' +
-        document.getElementById('long').value + 'W';
+        document.getElementById('lon').value + 'W';
     document.getElementById('linkContainer').style.display = 'block';
     return false
 }
@@ -116,13 +128,15 @@ function showLink() {
 </script>
 </head>
 <body style="text-align: justify">
-<div style="float: right; width=500px; text-align:right; margin: 1em;
+<div style="float: right; width: 500px; text-align: right; margin: 1em;
     font-size: small">
 <img src="/~bduncan/sunset.jpeg"
-    alt="Sunset at Oca&ntilde;a, Spain" style="width:495px" /><br />
+    alt="Sunset at Oca&ntilde;a, Spain" style="width: 495px; height: 367px" />
+<br />
 <p>Sunset taken at Oca&ntilde;a, Spain by Amy Barsby, 2006.
 <a rel="license" href="http://creativecommons.org/licenses/by/2.0/uk/">
-<img alt="Creative Commons License" style="border-width:0"
+<img alt="Creative Commons License"
+    style="border-width: 0; width: 80px; height: 15px"
     src="http://i.creativecommons.org/l/by/2.0/uk/80x15.png" /></a><br />
 </p>
 </div>
@@ -138,10 +152,10 @@ Edinburgh.</p>
 <p style="margin-left: 2em">
 <label for="lat">Latitude (decimal degrees, negative is South):</label>
 <input type="text" name="lat" id="lat" value="55.932756" /><br />
-<label for="long">Longitutde (decimal degrees, negative is West):</label>
-<input type="text" name="long" id="long" value="-3.177664" /><br />
-<label for="type">Type</label>
-<select name="type" id="type">
+<label for="lon">Longitutde (decimal degrees, negative is West):</label>
+<input type="text" name="lon" id="lon" value="-3.177664" /><br />
+<label for="cal">Type</label>
+<select name="cal" id="cal">
 <option value="sunRiseSet">Sunrise/sunset</option>
 <option value="aviationTime">First launch/last landing</option>
 <option value="civilTwilight">Civil dawn/dusk</option>
@@ -171,6 +185,11 @@ Engineering<span style="text-decoration: line-through"> and
 Electronics</span></a>, but I wrote it in my own time.
 I used <a href="http://www.vim.org/">Vim</a>.</p>
 <h2>Changes</h2>
+<p><b>2010-06-23</b></p>
+<p>Tidy up the python following pep8 and pylint recommendations (mostly
+renaming variables which clash with keywords or builtins like &quot;type&quot;
+and &quot;long&quot;). Send data gzip-compressed if possible. Get browsers to
+honour filenames when downloading.</p>
 <p><b>2009-03-31</b></p>
 <p>Times are now output in UTC. This should allow clients to adjust to the
 local timezone, especially for DST!</p>
@@ -183,52 +202,97 @@ from one month ago.</p>
 <p style="text-align: right"><i>Bruce Duncan, &copy; 2008</i>
 <a href="http://validator.w3.org/check?uri=referer">
 <img src="http://www.w3.org/Icons/valid-xhtml10-blue"
-    alt="Valid XHTML 1.0 Strict" style="border:none" /></a>
+    alt="Valid XHTML 1.0 Strict"
+    style="border: none; width: 88px; height: 31px" /></a>
 </p>
 </body>
 </html>
 """
-    req.headers_out['Content-Length'] = str(len(s))
-    return s
+    if testAcceptsGzip(req):
+        zbuf = compressBuf(s)
+        req.headers_out['Content-Encoding'] = 'gzip'
+        req.headers_out['Content-Length'] = str(len(zbuf))
+        req.send_http_header()
+        req.write(zbuf)
+    else:
+        req.headers_out['Content-Length'] = str(len(s))
+        req.send_http_header()
+        req.write(s)
+    return apache.OK
 
 
-def cal(req, lat=None, long=None, type=None):
+def cal(req, lat=None, lon=None, cal=None):
     """Use the Suncal class to output a calendar for one year from the current
     date."""
-    if lat is None or long is None:
+    if lat is None or lon is None:
         req.status = 302
         req.content_type = 'text/plain'
         req.headers_out['Location'] = '.'
         req.write('Found')
-    if type is None:
-        type = "sunRiseSet"
+    if cal is None:
+        cal = "sunRiseSet"
     req.content_type = "text/calendar"
     d = datetime.today()
     req.headers_out['Content-Disposition'] = \
-        'filename="%s_%s-%s-%s_%02f_%02f.ics"' % (type, d.year, d.month, d.day,
-        float(lat), float(long))
-    k = Suncal(float(lat), float(long), d - timedelta(days=30), 365, type)
+        'attachment; filename="%s_%s-%s-%s_%02f_%02f.ics"' % (
+        cal, d.year, d.month, d.day, float(lat), float(lon))
+    k = Suncal(float(lat), float(lon), d - timedelta(days=30), 365, cal)
     s = k.ical()
-    req.headers_out['Content-Length'] = str(len(s))
-    req.write(s)
+    if testAcceptsGzip(req):
+        zbuf = compressBuf(s)
+        req.headers_out['Content-Encoding'] = 'gzip'
+        req.headers_out['Content-Length'] = str(len(zbuf))
+        req.send_http_header()
+        req.write(zbuf)
+    else:
+        req.headers_out['Content-Length'] = str(len(s))
+        req.send_http_header()
+        req.write(s)
+    return apache.OK
 
 
 def Sunsource(req):
     """Distribute the Sun module."""
     req.content_type = "application/x-python"
-    req.headers_out['Content-Disposition'] = 'filename="Sun.py"'
+    req.headers_out['Content-Disposition'] = 'attachment; filename="Sun.py"'
     f = open("/home/bduncan/WWW/Suncalendar/Sun.py")
-    req.write(f.read())
-    f.close()
+    try:
+        s = f.read()
+    finally:
+        f.close()
+    if testAcceptsGzip(req):
+        zbuf = compressBuf(s)
+        req.headers_out['Content-Encoding'] = 'gzip'
+        req.headers_out['Content-Length'] = str(len(zbuf))
+        req.send_http_header()
+        req.write(zbuf)
+    else:
+        req.headers_out['Content-Length'] = str(len(s))
+        req.send_http_header()
+        req.write(s)
+    return apache.OK
 
 
 def source(req):
     """Deliver the source. Self-replicating code!"""
     req.content_type = "application/x-python"
-    req.headers_out['Content-Disposition'] = 'filename="Suncalendar.py"'
+    req.headers_out['Content-Disposition'] = 'attachment; filename="Suncalendar.py"'
     f = open("/home/bduncan/WWW/Suncalendar/index.py")
-    req.write(f.read())
-    f.close()
+    try:
+        s = f.read()
+    finally:
+        f.close()
+    if testAcceptsGzip(req):
+        zbuf = compressBuf(s)
+        req.headers_out['Content-Encoding'] = 'gzip'
+        req.headers_out['Content-Length'] = str(len(zbuf))
+        req.send_http_header()
+        req.write(zbuf)
+    else:
+        req.headers_out['Content-Length'] = str(len(s))
+        req.send_http_header()
+        req.write(s)
+    return apache.OK
 
 
 def Suncalendar(req):
